@@ -1,0 +1,71 @@
+{
+  "name": "flockerplay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FlockerPlay — игровой маркетплейс цифровых товаров и услуг",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "prisma generate && next build",
+    "start": "cross-env NODE_ENV=production node server.js",
+    "db:seed": "prisma db seed",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "typecheck": "tsc --noEmit"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "3.10.0",
+    "@prisma/client": "6.2.1",
+    "@radix-ui/react-avatar": "1.1.2",
+    "@radix-ui/react-dialog": "1.1.4",
+    "@radix-ui/react-dropdown-menu": "2.1.4",
+    "@radix-ui/react-label": "2.1.1",
+    "@radix-ui/react-select": "2.1.4",
+    "@radix-ui/react-separator": "1.1.1",
+    "@radix-ui/react-slot": "1.1.1",
+    "@radix-ui/react-switch": "1.1.2",
+    "@radix-ui/react-tabs": "1.1.2",
+    "@radix-ui/react-tooltip": "1.1.6",
+    "bcryptjs": "2.4.3",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "cross-env": "7.0.3",
+    "date-fns": "4.1.0",
+    "framer-motion": "11.18.2",
+    "lucide-react": "0.474.0",
+    "next": "15.5.22",
+    "next-auth": "5.0.0-beta.32",
+    "next-themes": "0.4.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-hook-form": "7.54.2",
+    "socket.io": "4.8.1",
+    "socket.io-client": "4.8.1",
+    "sonner": "1.7.2",
+    "tailwind-merge": "2.6.0",
+    "tailwindcss-animate": "1.0.7",
+    "zod": "3.24.1",
+    "zustand": "5.0.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "22.10.7",
+    "@types/react": "19.0.7",
+    "@types/react-dom": "19.0.3",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
+    "prisma": "6.2.1",
+    "tailwindcss": "3.4.17",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  },
+  "allowScripts": {
+    "@prisma/client@6.2.1": true,
+    "@prisma/engines@6.2.1": true,
+    "esbuild@0.23.1": true,
+    "prisma@6.2.1": true,
+    "sharp@0.34.5": true
+  }
+}

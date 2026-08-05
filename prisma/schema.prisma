@@ -1,0 +1,279 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ROLE_USER
+  ROLE_ADMIN
+}
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum TopUpStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum ComplaintStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum TxType {
+  RECHARGE
+  PURCHASE
+  SALE
+  ADMIN
+}
+
+enum BannerStatus {
+  PENDING
+  ACTIVE
+  HIDDEN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ROLE_USER)
+  avatarUrl    String?
+  about        String?
+  isSeller     Boolean  @default(false)
+  isVerified   Boolean  @default(false)
+  isBlocked    Boolean  @default(false)
+  balance      Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products        Product[]
+  orders          Order[]          @relation("buyerOrders")
+  soldOrders      Order[]          @relation("sellerOrders")
+  balanceTx       BalanceTransaction[]
+  topUps          TopUpRequest[]
+  tickets         Ticket[]
+  messages        Message[]
+  notifications   Notification[]
+  complaintsMade  Complaint[]      @relation("complaintsMade")
+  complaintsOnMe  Complaint[]      @relation("complaintsOnMe")
+  banners         Banner[]
+
+  @@index([role])
+  @@index([isSeller])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String?
+  sortOrder Int      @default(0)
+
+  products Product[]
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  sellerId     String
+  categoryId   String
+  title        String
+  description  String
+  price        Int
+  oldPrice     Int?
+  stock        Int           @default(0)
+  images       String[]      @default([])
+  deliveryType String        @default("AUTO")
+  deliveryInfo String        @default("")
+  status       ProductStatus @default(PENDING)
+  isFeatured   Boolean       @default(false)
+  soldCount    Int           @default(0)
+  rating       Float         @default(5)
+  ratingCount  Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  seller     User        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  orderItems Order[]
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  buyerId      String
+  sellerId     String
+  productId    String?
+  total        Int
+  qty          Int         @default(1)
+  status       OrderStatus @default(PENDING)
+  buyerNote    String?
+  deliveryInfo String?
+  deliveredAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  buyer   User     @relation("buyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller  User     @relation("sellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model BalanceTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  type      TxType
+  amount    Int
+  reason    String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TopUpRequest {
+  id         String      @id @default(cuid())
+  userId     String
+  amount     Int
+  method     String?
+  comment    String?
+  proofUrl   String?
+  status     TopUpStatus @default(PENDING)
+  adminNote  String?
+  reviewedAt DateTime?
+  createdAt  DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Ticket {
+  id        String       @id @default(cuid())
+  userId    String
+  subject   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  ticketId  String
+  senderId  String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+model Complaint {
+  id         String          @id @default(cuid())
+  reporterId String
+  targetId   String
+  orderId    String?
+  reason     String
+  text       String?
+  status     ComplaintStatus @default(PENDING)
+  adminNote  String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  reporter User @relation("complaintsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  target   User @relation("complaintsOnMe", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId])
+  @@index([status])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String?
+  type      String   @default("info")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model Banner {
+  id        String       @id @default(cuid())
+  ownerId   String
+  title     String
+  imageUrl  String?
+  linkUrl   String?
+  placement String       @default("HOME")
+  status    BannerStatus @default(PENDING)
+  sortOrder Int          @default(0)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([placement])
+}
+
+model SiteSetting {
+  id           String   @id @default("main")
+  siteName     String   @default("FlockerPlay")
+  tagline      String   @default("Игровой маркетплейс цифровых товаров и услуг")
+  supportEmail String   @default("Flocker@gmail.com")
+  telegram     String   @default("")
+  vk           String   @default("")
+  discord      String   @default("")
+  commission   Int      @default(0)
+  minTopUp     Int      @default(50)
+  updatedAt    DateTime @updatedAt
+}
