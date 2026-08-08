@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Headphones, Loader2, Plus, Send, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Headphones, Loader2, Plus, Send, ShieldAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { getSocket } from "@/lib/socket";
+import { DealContext, type DealOrder } from "@/components/support/deal-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, timeAgo, initials } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface TicketSummary {
   id: string;
   subject: string;
   status: string;
+  orderId: string | null;
   createdAt: string;
   updatedAt: string;
   _count: { messages: number };
@@ -35,7 +39,9 @@ interface TicketDetail {
   subject: string;
   status: string;
   createdAt: string;
+  orderId: string | null;
   user: { id: string; name: string; avatarUrl: string | null };
+  order: DealOrder | null;
   messages: ChatMessage[];
 }
 
@@ -60,6 +66,8 @@ export function SupportChat({ userId, userName }: { userId: string; userName: st
   const [creating, setCreating] = useState(false);
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const autoTicket = searchParams.get("ticket");
 
   const loadTickets = useCallback(async () => {
     try {
@@ -89,6 +97,12 @@ export function SupportChat({ userId, userName }: { userId: string; userName: st
       setLoadingMessages(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (autoTicket) {
+      openTicket(autoTicket);
+    }
+  }, [autoTicket, openTicket]);
 
   useEffect(() => {
     const socket = getSocket(userId);
@@ -186,7 +200,12 @@ export function SupportChat({ userId, userName }: { userId: string; userName: st
   const statusInfo = activeTicket ? statusLabel[activeTicket.status] : undefined;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+    <div
+      className={cn(
+        "grid gap-6",
+        activeTicket?.order ? "lg:grid-cols-[300px_minmax(0,1fr)_300px]" : "lg:grid-cols-[300px_1fr]"
+      )}
+    >
       <div className="flex flex-col rounded-3xl border border-border/80 bg-card/60 p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Мои обращения</h2>
@@ -209,7 +228,12 @@ export function SupportChat({ userId, userName }: { userId: string; userName: st
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-medium">{t.subject}</span>
+                  <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-medium">
+                    {t.orderId && (
+                      <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-400" aria-label="Спор" />
+                    )}
+                    <span className="truncate">{t.subject}</span>
+                  </span>
                   <Badge className={statusLabel[t.status]?.className ?? ""}>{statusLabel[t.status]?.label ?? t.status}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -296,6 +320,8 @@ export function SupportChat({ userId, userName }: { userId: string; userName: st
           </>
         )}
       </div>
+
+      {activeTicket?.order && <DealContext order={activeTicket.order} />}
 
       <Dialog open={showNew} onOpenChange={setShowNew}>
         <DialogContent>

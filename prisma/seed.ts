@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "Flocker@gmail.com";
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "Flocker@gmail.com").toLowerCase();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "FlockerPasword";
 const ADMIN_NAME = process.env.ADMIN_NAME || "Flocker";
 
@@ -102,18 +102,68 @@ async function main() {
   }
 
   const cats = [
-    { name: "Ключи и аккаунты", slug: "keys", icon: "key", sortOrder: 1 },
-    { name: "Валюта игр", slug: "currency", icon: "coins", sortOrder: 2 },
-    { name: "Буст и прокачка", slug: "boost", icon: "zap", sortOrder: 3 },
-    { name: "Донаты", slug: "donates", icon: "gift", sortOrder: 4 },
-    { name: "Подарочные карты", slug: "gift-cards", icon: "credit-card", sortOrder: 5 },
-    { name: "Игровые услуги", slug: "services", icon: "wrench", sortOrder: 6 },
+    { name: "Ключи и доступы", slug: "keys", icon: "key", accent: "#38bdf8", sortOrder: 1 },
+    { name: "Игровая валюта", slug: "currency", icon: "coins", accent: "#fbbf24", sortOrder: 2 },
+    { name: "Буст и прокачка", slug: "boost", icon: "zap", accent: "#a855f7", sortOrder: 3 },
+    { name: "Донаты", slug: "donates", icon: "gift", accent: "#22d3ee", sortOrder: 4 },
+    { name: "Подарочные карты", slug: "gift-cards", icon: "credit-card", accent: "#34d399", sortOrder: 5 },
+    { name: "Услуги и сервисы", slug: "services", icon: "wrench", accent: "#f472b6", sortOrder: 6 },
+    { name: "Telegram", slug: "telegram", icon: "✈️", accent: "#229ED9", sortOrder: 10, featured: true },
+    { name: "Steam", slug: "steam", icon: "🎮", accent: "#1b2838", sortOrder: 11, featured: true },
+    { name: "Standoff 2", slug: "standoff", icon: "🔫", accent: "#eab308", sortOrder: 12, featured: true },
+    { name: "Minecraft", slug: "minecraft", icon: "⛏️", accent: "#16a34a", sortOrder: 13, featured: true },
+    { name: "CS", slug: "cs", icon: "🎯", accent: "#f97316", sortOrder: 14, featured: true },
+    { name: "Roblox", slug: "roblox", icon: "🧱", accent: "#ef4444", sortOrder: 15, featured: true },
+    { name: "PUBG", slug: "pubg", icon: "🪂", accent: "#f59e0b", sortOrder: 16, featured: true },
+    { name: "Brawl Stars", slug: "brawl-stars", icon: "⭐", accent: "#fbbf24", sortOrder: 17, featured: true },
   ];
   const categoryIds: Record<string, string> = {};
   for (const c of cats) {
     const created = await prisma.category.create({ data: c });
     categoryIds[c.slug] = created.id;
   }
+
+  const telegramSubs: [string, string, string][] = [
+    ["stars", "⭐", "Звёзды"], ["premium", "👑", "Премиум"], ["gifts", "🎁", "Подарки (NFT)"],
+    ["channels", "📢", "Каналы"], ["services", "🛠️", "Услуги"], ["usernames", "🔤", "Юзернеймы"],
+    ["ads", "📣", "Реклама"], ["boosts", "🚀", "Бусты"], ["rent", "🏠", "Аренда"], ["mods", "🧩", "Моды"],
+    ["bots", "🤖", "Боты"], ["groups", "👥", "Группы"], ["design", "🎨", "Дизайн"], ["stickers", "🖼️", "Стикеры"],
+    ["clickers", "👆", "Кликеры"],
+  ];
+  const subcategoryIds: Record<string, string> = {};
+  let subSort = 1;
+  for (const [slug, icon, name] of telegramSubs) {
+    const created = await prisma.subcategory.create({
+      data: {
+        category: { connect: { id: categoryIds["telegram"] } },
+        name,
+        slug,
+        icon,
+        sortOrder: subSort++,
+      },
+    });
+    subcategoryIds["telegram_" + slug] = created.id;
+  }
+
+  // Официальный товар «ТГ Звёзды» (1 звезда = starsRate/100 ₽), продавец — админ
+  const starsProduct = await prisma.product.create({
+    data: {
+      sellerId: admin.id,
+      categoryId: categoryIds["telegram"],
+      subcategoryId: subcategoryIds["telegram_stars"],
+      title: "ТГ Звёзды",
+      description:
+        "Официальное пополнение Telegram Stars от FlockerPlay. После оплаты звёзды будут отправлены на указанный @username в течение нескольких минут. Минимальный заказ — 100 звёзд.",
+      price: 150,
+      stock: 0,
+      deliveryType: "MANUAL",
+      deliveryInfo: "Введите @username получателя в поле примечания при оформлении заказа. Звёзды отправляются на этот аккаунт.",
+      status: "APPROVED",
+      isFeatured: false,
+      rating: 5,
+      ratingCount: 1,
+    },
+  });
 
   const products = [
     {
@@ -224,20 +274,44 @@ async function main() {
         imageUrl: IMG.banner(`Распродажа ${i}`),
         linkUrl: "/catalog",
         placement: "HOME",
-        status: i === 1 ? "ACTIVE" : "PENDING",
+        status: "ACTIVE",
         sortOrder: i,
+        durationMs: 3000 + i * 1000,
       },
     });
   }
 
+  await prisma.banner.create({
+    data: {
+      ownerId: createdSellers[0].id,
+      title: "🔥 Скидки до 30% на популярные товары — только до конца недели!",
+      imageUrl: null,
+      linkUrl: "/catalog",
+      placement: "TOP",
+      status: "ACTIVE",
+      sortOrder: 0,
+      durationMs: 5000,
+    },
+  });
+
   await prisma.siteSetting.upsert({
     where: { id: "main" },
-    update: {},
+    update: {
+      starsRate: 150,
+      starsMin: 100,
+      starsMax: 100000,
+    },
     create: {
       id: "main",
       siteName: "FlockerPlay",
       tagline: "Игровой маркетплейс цифровых товаров и услуг",
       supportEmail: ADMIN_EMAIL,
+      commission: 20,
+      minTopUp: 50,
+      minWithdrawal: 100,
+      starsRate: 150,
+      starsMin: 100,
+      starsMax: 100000,
     },
   });
 

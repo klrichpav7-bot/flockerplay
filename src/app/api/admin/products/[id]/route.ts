@@ -10,6 +10,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json().catch(() => ({}));
   const status = String(body?.status ?? "");
   const isFeatured = body?.isFeatured;
+  const isOfficial = body?.isOfficial;
 
   const existing = await prisma.product.findUnique({ where: { id } });
   if (!existing) return error("Товар не найден", 404);
@@ -17,6 +18,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const data: Record<string, unknown> = {};
   if (["APPROVED", "HIDDEN", "PENDING", "REJECTED"].includes(status)) data.status = status;
   if (typeof isFeatured === "boolean") data.isFeatured = isFeatured;
+  if (typeof isOfficial === "boolean") data.isOfficial = isOfficial;
 
   const product = await prisma.product.update({ where: { id }, data });
 

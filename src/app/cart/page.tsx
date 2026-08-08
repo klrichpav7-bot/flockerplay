@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowRight, Loader2, Minus, Plus, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
+import { ArrowRight, BadgePercent, Loader2, Minus, Plus, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCartStore, cartTotal, cartCount } from "@/store/cart";
 import { useUserStore } from "@/store/user";
@@ -12,15 +12,35 @@ import { api } from "@/lib/api-client";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 
+interface CartDiscount {
+  value: number;
+  code: string;
+}
+
 export default function CartPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { items, setQty, removeItem, clear } = useCartStore();
   const setBalance = useUserStore((s) => s.setBalance);
   const [buying, setBuying] = useState(false);
+  const [discount, setDiscount] = useState<CartDiscount | null>(null);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/promo/current")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.discount) setDiscount({ value: data.discount.value, code: data.discount.code });
+      })
+      .catch(() => {});
+  }, [status]);
 
   const total = cartTotal(items);
   const count = cartCount(items);
+  const payable = discount
+    ? items.reduce((s, i) => s + Math.round((i.price * i.qty * (100 - discount.value)) / 100), 0)
+    : total;
+  const discountAmount = total - payable;
 
   async function checkout() {
     if (status !== "authenticated") {
@@ -29,14 +49,18 @@ export default function CartPage() {
     }
     setBuying(true);
     try {
-      const res = await api<{ newBalance: number; total: number }>("/api/orders", {
+      const res = await api<{ newBalance: number; total: number; orders: { id: string }[] }>("/api/orders", {
         method: "POST",
         body: JSON.stringify({ items: items.map((i) => ({ productId: i.productId, qty: i.qty })) }),
       });
       setBalance(res.newBalance);
       clear();
-      toast.success("Заказ оформлен!", { description: `Списано ${formatPrice(res.total)}. Товары уже в заказах.` });
-      router.push("/dashboard/orders");
+      toast.success("Заказ оформлен!", { description: `Списано ${formatPrice(res.total)}. Данные товаров ждут вас на странице заказа.` });
+      if (res.orders?.length > 0) {
+        router.push(`/orders/${res.orders[0].id}`);
+      } else {
+        router.push("/dashboard/orders");
+      }
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ошибка", {
@@ -138,9 +162,18 @@ export default function CartPage() {
               <span>Доставка</span>
               <span className="text-emerald-400">Мгновенно</span>
             </div>
+            {discount && discountAmount > 0 && (
+              <div className="flex items-center justify-between rounded-xl bg-violet-500/10 px-3 py-2 text-violet-300">
+                <span className="flex items-center gap-1.5">
+                  <BadgePercent className="h-4 w-4" />
+                  Скидка {discount.value}% ({discount.code})
+                </span>
+                <span>−{formatPrice(discountAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-border pt-3 text-base font-bold">
               <span>К оплате</span>
-              <span className="text-emerald-400">{formatPrice(total)}</span>
+              <span className="text-emerald-400">{formatPrice(payable)}</span>
             </div>
           </div>
           <Button onClick={checkout} className="mt-5 w-full" size="lg" disabled={buying}>

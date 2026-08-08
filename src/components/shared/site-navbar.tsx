@@ -8,16 +8,21 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessagesSquare,
   Package,
   PlusCircle,
   ShoppingCart,
   Store,
+  User,
   X,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
-import { BalanceChip } from "@/components/shared/balance-chip";
+import { WalletMenu } from "@/components/shared/wallet-menu";
 import { NotificationsBell } from "@/components/shared/notifications";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { ChatsLink } from "@/components/shared/chats-link";
+import { NavSearch } from "@/components/shared/nav-search";
 import { useCartStore, cartCount } from "@/store/cart";
 import { useUserStore } from "@/store/user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,6 +32,7 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/catalog", label: "Каталог" },
+  { href: "/stars", label: "ТГ-звёзды" },
   { href: "/catalog?sort=popular", label: "Топ продаж" },
   { href: "/dashboard/sales", label: "Продавать" },
   { href: "/support", label: "Поддержка" },
@@ -73,7 +79,8 @@ export function SiteNavbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          {user && <BalanceChip initialBalance={user.balance} className="hidden sm:inline-flex" />}
+          {user && <WalletMenu initialBalance={user.balance} className="hidden sm:block" />}
+          <NavSearch />
 
           <Link
             href="/cart"
@@ -89,6 +96,8 @@ export function SiteNavbar() {
           </Link>
 
           {user && <NotificationsBell className="hidden sm:block" />}
+          {user && <ChatsLink className="hidden sm:grid" />}
+          <ThemeToggle className="hidden sm:grid" />
 
           {status === "loading" ? (
             <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
@@ -186,7 +195,9 @@ function UserMenu({
 
   const items = [
     { href: "/dashboard", label: "Личный кабинет", icon: LayoutDashboard },
+    { href: "/dashboard/profile", label: "Профиль", icon: User },
     { href: "/dashboard/orders", label: "Мои заказы", icon: Package },
+    { href: "/dashboard/chats", label: "Чаты", icon: MessagesSquare },
     { href: "/dashboard/sales", label: "Продажи", icon: Store },
     { href: "/dashboard/products/new", label: "Добавить товар", icon: PlusCircle },
   ];

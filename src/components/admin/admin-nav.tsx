@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Banknote,
+  CreditCard,
   Flag,
   Headphones,
   LayoutDashboard,
+  Layers,
   Megaphone,
   Package,
+  Settings,
+  Shapes,
   ShieldCheck,
+  TicketPercent,
   Users,
   Wallet,
 } from "lucide-react";
@@ -18,10 +24,16 @@ const links = [
   { href: "/admin", label: "Обзор", icon: LayoutDashboard },
   { href: "/admin/users", label: "Пользователи", icon: Users },
   { href: "/admin/topups", label: "Пополнения", icon: Wallet },
+  { href: "/admin/payments", label: "Платежи ЮMoney", icon: CreditCard },
+  { href: "/admin/withdrawals", label: "Выплаты", icon: Banknote },
   { href: "/admin/products", label: "Товары", icon: Package },
+  { href: "/admin/categories", label: "Категории", icon: Shapes },
+  { href: "/admin/subcategories", label: "Подкатегории", icon: Layers },
+  { href: "/admin/promos", label: "Промокоды", icon: TicketPercent },
   { href: "/admin/banners", label: "Баннеры", icon: Megaphone },
   { href: "/admin/complaints", label: "Жалобы", icon: Flag },
   { href: "/admin/tickets", label: "Поддержка", icon: Headphones },
+  { href: "/admin/settings", label: "Настройки", icon: Settings },
 ];
 
 export function AdminNav() {

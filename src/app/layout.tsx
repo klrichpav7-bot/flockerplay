@@ -4,8 +4,10 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { BackgroundFX } from "@/components/shared/background-fx";
+import { TopBanner } from "@/components/shared/top-banner";
 import { SiteNavbar } from "@/components/shared/site-navbar";
 import { SiteFooter } from "@/components/shared/site-footer";
+import { SessionGate } from "@/components/shared/session-gate";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -37,11 +39,20 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className="dark" suppressHydrationWarning>
+    <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("fp-theme");if(!t)t="dark";document.documentElement.classList.toggle("dark",t==="dark")}catch(e){document.documentElement.classList.add("dark")}`,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${unbounded.variable} relative min-h-screen font-sans`}>
         <Providers>
+          <SessionGate />
           <BackgroundFX />
           <div className="relative z-10 flex min-h-screen flex-col">
+            <TopBanner />
             <SiteNavbar />
             <main className="flex-1">{children}</main>
             <SiteFooter />

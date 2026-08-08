@@ -8,7 +8,9 @@ export async function GET() {
   if (!session?.user?.id) return error("Требуется авторизация", 401);
 
   const tickets = await prisma.ticket.findMany({
-    where: { userId: session.user.id },
+    where: {
+      OR: [{ userId: session.user.id }, { order: { buyerId: session.user.id } }, { order: { sellerId: session.user.id } }],
+    },
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { messages: true } } },
   });

@@ -53,9 +53,9 @@ export function BuyPanel({ productId, title, price, oldPrice, stock, image, sell
       });
       setBalance(res.newBalance);
       toast.success("Заказ оформлен!", {
-        description: `Списано ${formatPrice(res.total)}. Товар уже ждёт вас в заказах.`,
+        description: `Списано ${formatPrice(res.total)}. Данные товара уже ждут вас на странице заказа.`,
       });
-      router.push("/dashboard/orders");
+      router.push(`/orders/${res.orders[0].id}`);
       router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Ошибка";

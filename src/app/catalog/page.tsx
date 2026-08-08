@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PackageSearch } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { publicProductSelect } from "@/lib/product-public";
 import { ProductCard, type ProductCardData } from "@/components/shared/product-card";
 import { CatalogFilterBar } from "@/components/catalog/catalog-filter-bar";
 import { cn } from "@/lib/utils";
@@ -12,18 +13,27 @@ type SortKey = "popular" | "newest" | "price-asc" | "price-desc" | "rating";
 export default async function CatalogPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const cat = typeof sp.cat === "string" ? sp.cat : undefined;
+  const sub = typeof sp.sub === "string" ? sp.sub : undefined;
   const q = typeof sp.q === "string" ? sp.q.trim() : undefined;
   const sort = (typeof sp.sort === "string" ? sp.sort : "") as SortKey;
 
-  const [categories, products] = await Promise.all([
+  const [categories, subcategories, products] = await Promise.all([
     prisma.category.findMany({
       orderBy: { sortOrder: "asc" },
       include: { _count: { select: { products: { where: { status: "APPROVED" } } } } },
     }),
+    cat
+      ? prisma.subcategory.findMany({
+          where: { categoryId: cat, active: true },
+          orderBy: { sortOrder: "asc" },
+          include: { _count: { select: { products: { where: { status: "APPROVED" } } } } },
+        })
+      : [],
     prisma.product.findMany({
       where: {
         status: "APPROVED",
         ...(cat ? { categoryId: cat } : {}),
+        ...(sub ? { subcategoryId: sub } : {}),
         ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }] } : {}),
       },
       orderBy:
@@ -36,7 +46,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
               : sort === "newest"
                 ? { createdAt: "desc" }
                 : { soldCount: "desc" },
-      include: {
+      select: {
+        ...publicProductSelect,
         category: { select: { name: true } },
         seller: { select: { name: true, isVerified: true } },
       },
@@ -45,7 +56,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
 
   function href(params: Record<string, string | undefined>) {
     const search = new URLSearchParams();
-    const merged = { cat, q, sort: sort || undefined, ...params };
+    const merged = { cat, q, sort: sort || undefined, sub, ...params };
     for (const [k, v] of Object.entries(merged)) {
       if (v) search.set(k, v);
     }
@@ -67,7 +78,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
 
       <div className="mt-6 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         <Link
-          href={href({ cat: undefined })}
+          href={href({ cat: undefined, sub: undefined })}
           className={cn(
             "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition",
             !cat ? "border-primary/50 bg-primary/15 text-primary" : "border-border bg-card/60 text-foreground/70 hover:border-primary/40"
@@ -78,7 +89,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
         {categories.map((c) => (
           <Link
             key={c.id}
-            href={href({ cat: cat === c.id ? undefined : c.id })}
+            href={href({ cat: cat === c.id ? undefined : c.id, sub: undefined })}
             className={cn(
               "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition",
               cat === c.id ? "border-primary/50 bg-primary/15 text-primary" : "border-border bg-card/60 text-foreground/70 hover:border-primary/40"
@@ -89,6 +100,35 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
           </Link>
         ))}
       </div>
+
+      {subcategories.length > 0 && (
+        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Подразделы</span>
+          <Link
+            href={href({ sub: undefined })}
+            className={cn(
+              "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
+              !sub ? "border-primary/50 bg-primary/15 text-primary" : "border-border bg-card/60 text-foreground/70 hover:border-primary/40"
+            )}
+          >
+            Все
+          </Link>
+          {subcategories.map((s) => (
+            <Link
+              key={s.id}
+              href={href({ sub: sub === s.id ? undefined : s.id })}
+              className={cn(
+                "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
+                sub === s.id ? "border-primary/50 bg-primary/15 text-primary" : "border-border bg-card/60 text-foreground/70 hover:border-primary/40"
+              )}
+            >
+              {s.icon && <span className="mr-1.5">{s.icon}</span>}
+              {s.name}
+              <span className="ml-1.5 text-xs text-muted-foreground">{s._count.products}</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {products.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-24 text-center">

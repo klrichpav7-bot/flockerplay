@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Package, PlusCircle, ShoppingBag, TrendingUp, Wallet } from "lucide-react";
+import { Lock, Package, PlusCircle, ShoppingBag, TrendingUp, Wallet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { releaseMaturedFunds } from "@/lib/finance";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,9 @@ export default async function SalesPage() {
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
 
-  const [user, soldOrders, products, revenueAgg, pendingDelivery, topProducts] = await Promise.all([
+  await releaseMaturedFunds();
+
+  const [user, soldOrders, products, revenueAgg, pendingDelivery, topProducts, settings] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.order.count({ where: { sellerId: userId, status: { in: ["PAID", "DELIVERED", "COMPLETED"] } } }),
     prisma.product.findMany({ where: { sellerId: userId } }),
@@ -25,6 +28,7 @@ export default async function SalesPage() {
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
+    prisma.siteSetting.findUnique({ where: { id: "main" } }),
   ]);
 
   if (!user) redirect("/login");
@@ -69,6 +73,22 @@ export default async function SalesPage() {
           <p className="mt-3 text-2xl font-bold">{pendingDelivery}</p>
           <p className="text-xs text-muted-foreground">Ждут выдачи</p>
         </div>
+        <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-5">
+          <Lock className="h-5 w-5 text-amber-400" />
+          <p className="mt-3 text-2xl font-bold text-amber-400">{formatPrice(user.heldBalance)}</p>
+          <p className="text-xs text-muted-foreground">Заморожено на 3 дня</p>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
+        <p className="text-sm text-muted-foreground">
+          Комиссия платформы: <b className="text-foreground">{settings?.commission ?? 0}%</b>. После подтверждения сделки покупателем
+          выручка замораживается на 3 дня, затем становится доступной в разделе{" "}
+          <Link href="/dashboard/withdrawals" className="font-medium text-sky-400 hover:text-sky-300">
+            «Вывод средств»
+          </Link>
+          .
+        </p>
       </div>
 
       {pendingDelivery > 0 && (
@@ -94,7 +114,10 @@ export default async function SalesPage() {
             {topProducts.map((o) => (
               <div key={o.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 px-4 py-3">
                 <p className="min-w-0 truncate text-sm font-medium">{o.product?.title ?? "Товар"}</p>
-                <span className="shrink-0 text-sm font-semibold text-emerald-400">+{formatPrice(o.total)}</span>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold text-emerald-400">+{formatPrice(o.sellerAmount)}</p>
+                  <p className="text-[11px] text-muted-foreground">к получению · {formatPrice(o.total)}</p>
+                </div>
               </div>
             ))}
           </div>

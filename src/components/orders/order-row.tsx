@@ -3,25 +3,30 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCheck, ClipboardCopy, Loader2, Send } from "lucide-react";
+import { CheckCheck, ClipboardCopy, Loader2, Send, Star } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { formatDate, formatPrice, timeAgo } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export interface OrderDto {
   id: string;
   status: string;
   total: number;
   qty: number;
+  sellerAmount: number;
+  fundsReleaseAt?: string | null;
   buyerNote?: string | null;
   deliveryInfo?: string | null;
   createdAt: string;
   product?: { id: string; title: string; images: string[]; deliveryType: string } | null;
   buyer?: { id: string; name: string; isVerified: boolean } | null;
   seller?: { id: string; name: string; isVerified: boolean } | null;
+  review?: { rating: number; comment?: string | null } | null;
 }
 
 const statusMap: Record<string, { label: string; className: string }> = {
@@ -36,8 +41,11 @@ export function OrderRow({ order, role }: { order: OrderDto; role: "buyer" | "se
   const router = useRouter();
   const [delivering, setDelivering] = useState(false);
   const [deliveryText, setDeliveryText] = useState("");
-  const [completing, setCompleting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const st = statusMap[order.status] ?? { label: order.status, className: "" };
 
@@ -59,16 +67,21 @@ export function OrderRow({ order, role }: { order: OrderDto; role: "buyer" | "se
     }
   }
 
-  async function complete() {
-    setCompleting(true);
+  async function confirm() {
+    if (submitting) return;
+    setSubmitting(true);
     try {
-      await api(`/api/orders/${order.id}/complete`, { method: "POST" });
-      toast.success("Заказ завершён");
+      await api(`/api/orders/${order.id}/complete`, {
+        method: "POST",
+        body: JSON.stringify({ rating, comment }),
+      });
+      toast.success("Заказ завершён, спасибо за отзыв!");
+      setReviewOpen(false);
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ошибка");
     } finally {
-      setCompleting(false);
+      setSubmitting(false);
     }
   }
 
@@ -134,10 +147,36 @@ export function OrderRow({ order, role }: { order: OrderDto; role: "buyer" | "se
         </div>
       )}
 
+      {role === "seller" && order.sellerAmount > 0 && (
+        <p className="mt-3 rounded-2xl bg-muted/40 px-4 py-2.5 text-sm">
+          {order.status === "COMPLETED" ? (
+            <span className="text-amber-400">
+              К получению: <b>{formatPrice(order.sellerAmount)}</b> · заморожены до {formatDate(order.fundsReleaseAt)}
+            </span>
+          ) : order.status === "DELIVERED" || order.status === "PAID" ? (
+            <span className="text-muted-foreground">
+              К получению после подтверждения: <b className="text-amber-400">{formatPrice(order.sellerAmount)}</b>
+            </span>
+          ) : (
+            <span className="text-muted-foreground">К получению: <b>{formatPrice(order.sellerAmount)}</b></span>
+          )}
+        </p>
+      )}
+
+      {order.review && (
+        <div className="mt-3 rounded-2xl border border-border/60 p-4">
+          <p className="flex items-center gap-1 text-amber-400">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} className={cn("h-4 w-4", s <= order.review!.rating ? "fill-current" : "opacity-25")} />
+            ))}
+          </p>
+          {order.review.comment && <p className="mt-2 text-sm text-muted-foreground">«{order.review.comment}»</p>}
+        </div>
+      )}
+
       {role === "buyer" && order.status === "DELIVERED" && (
-        <Button onClick={complete} variant="secondary" className="mt-4 w-full sm:w-auto" disabled={completing}>
-          {completing && <Loader2 className="h-4 w-4 animate-spin" />}
-          Подтвердить получение
+        <Button onClick={() => setReviewOpen(true)} variant="secondary" className="mt-4 w-full sm:w-auto">
+          <Star className="h-4 w-4" /> Подтвердить получение и оценить
         </Button>
       )}
 
@@ -159,6 +198,49 @@ export function OrderRow({ order, role }: { order: OrderDto; role: "buyer" | "se
       {order.status === "PENDING" && (
         <p className="mt-3 text-xs text-muted-foreground">Создан {timeAgo(order.createdAt)}</p>
       )}
+
+      <Link
+        href={`/orders/${order.id}`}
+        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-sky-400 transition hover:text-sky-300"
+      >
+        Открыть страницу заказа →
+      </Link>
+
+      <Dialog open={reviewOpen} onOpenChange={(o) => !o && setReviewOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Подтвердить получение</DialogTitle>
+            <DialogDescription>
+              Оцените сделку. После подтверждения средства продавца будут заморожены на 3 дня.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setRating(s)}
+                  className="rounded-lg p-1 transition hover:scale-110"
+                  aria-label={`Оценка ${s}`}
+                >
+                  <Star className={cn("h-7 w-7", s <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40")} />
+                </button>
+              ))}
+            </div>
+            <Textarea
+              rows={3}
+              placeholder="Комментарий к отзыву (необязательно)"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+            <Button onClick={confirm} className="w-full" disabled={submitting}>
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Подтвердить заказ
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { TopUpForm } from "@/components/dashboard/topup-form";
+import { YooMoneyCard } from "@/components/dashboard/yoomoney-card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatPrice } from "@/lib/format";
 
@@ -13,11 +14,18 @@ const statusMap: Record<string, { label: string; className: string }> = {
   REJECTED: { label: "Отклонено", className: "bg-rose-500/15 text-rose-400" },
 };
 
-export default async function TopUpPage() {
+export default async function TopUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const [user, topUps, tx] = await Promise.all([
+  const sp = await searchParams;
+  const yoomoneyPayment = sp.yoomoney ?? null;
+
+  const [user, topUps, tx, settings] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id } }),
     prisma.topUpRequest.findMany({ where: { userId: session.user.id }, orderBy: { createdAt: "desc" } }),
     prisma.balanceTransaction.findMany({
@@ -25,9 +33,12 @@ export default async function TopUpPage() {
       orderBy: { createdAt: "desc" },
       take: 15,
     }),
+    prisma.siteSetting.findUnique({ where: { id: "main" } }),
   ]);
 
   if (!user) redirect("/login");
+
+  const minTopUp = settings?.minTopUp ?? 50;
 
   return (
     <div className="space-y-6">
@@ -39,7 +50,10 @@ export default async function TopUpPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <TopUpForm />
+        <div className="space-y-6">
+          <YooMoneyCard minTopUp={minTopUp} pendingPaymentId={yoomoneyPayment} />
+          <TopUpForm />
+        </div>
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-border/80 bg-card/60 p-6">

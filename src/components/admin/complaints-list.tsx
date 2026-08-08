@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Loader2, X } from "lucide-react";
+import { Banknote, Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
@@ -33,7 +33,7 @@ export function ComplaintsList() {
   const [items, setItems] = useState<AdminComplaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<AdminComplaint | null>(null);
-  const [action, setAction] = useState<"RESOLVE" | "DISMISS">("RESOLVE");
+  const [action, setAction] = useState<"RESOLVE" | "DISMISS" | "REFUND">("RESOLVE");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +52,7 @@ export function ComplaintsList() {
     load();
   }, [load]);
 
-  function openReview(c: AdminComplaint, a: "RESOLVE" | "DISMISS") {
+  function openReview(c: AdminComplaint, a: "RESOLVE" | "DISMISS" | "REFUND") {
     setTarget(c);
     setAction(a);
     setNote("");
@@ -113,6 +113,11 @@ export function ComplaintsList() {
                 <Button variant="outline" size="sm" onClick={() => openReview(c, "DISMISS")}>
                   <X className="h-3.5 w-3.5" /> Отклонить
                 </Button>
+                {c.orderId && (
+                  <Button variant="destructive" size="sm" onClick={() => openReview(c, "REFUND")}>
+                    <Banknote className="h-3.5 w-3.5" /> Вернуть деньги покупателю
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -122,9 +127,12 @@ export function ComplaintsList() {
       <Dialog open={!!target} onOpenChange={(o) => !o && setTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{action === "RESOLVE" ? "Решить жалобу" : "Отклонить жалобу"}</DialogTitle>
+            <DialogTitle>
+              {action === "RESOLVE" ? "Решить жалобу" : action === "REFUND" ? "Вернуть средства покупателю" : "Отклонить жалобу"}
+            </DialogTitle>
             <DialogDescription>
               {target?.reporter.name} на {target?.target.name} · {target?.reason}
+              {action === "REFUND" && " · Сумма заказа вернётся на баланс покупателя, заказ будет отменён."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
@@ -136,7 +144,12 @@ export function ComplaintsList() {
                 onChange={(e) => setNote(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" variant={action === "DISMISS" ? "destructive" : "default"} disabled={submitting}>
+            <Button
+              type="submit"
+              className="w-full"
+              variant={action === "DISMISS" ? "destructive" : action === "REFUND" ? "destructive" : "default"}
+              disabled={submitting}
+            >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Подтвердить
             </Button>

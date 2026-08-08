@@ -170,14 +170,14 @@ export function ProductForm({ initial }: ProductFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="deliveryInfo">
-          {deliveryType === "AUTO" ? "Данные для автовыдачи (ключи, коды)" : "Инструкция для покупателя"}
+          {deliveryType === "AUTO" ? "Данные товара (ключи, логин/пароль) — обязательно" : "Инструкция для покупателя"}
         </Label>
         <Textarea
           id="deliveryInfo"
           rows={3}
           placeholder={
             deliveryType === "AUTO"
-              ? "Сюда вставляются ключи/коды. Разделяйте несколько позиций пустой строкой."
+              ? "Вставьте сюда данные товара: ключи, логин/пароль, коды. Они покажутся покупателю сразу после оплаты."
               : "Что покупатель должен предоставить для выдачи (например, Steam логин)."
           }
           {...register("deliveryInfo")}

@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { publicProductSelect } from "@/lib/product-public";
 import { ProductCard, type ProductCardData } from "@/components/shared/product-card";
 import { HeroSearch } from "@/components/home/hero-search";
-import { CategoryIcon } from "@/components/shared/category-icon";
+import { BannerSlider } from "@/components/home/banner-slider";
+import { GameCarousel } from "@/components/home/game-carousel";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Gamepad2, ShieldCheck, Timer, Wallet, Zap } from "lucide-react";
+import { ArrowRight, ShieldCheck, Timer, Wallet, Zap } from "lucide-react";
 import { formatNumber } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, featured, popular, banners] = await Promise.all([
+  const [categories, featured, popular, official, banners] = await Promise.all([
     prisma.category.findMany({
       orderBy: { sortOrder: "asc" },
       include: { _count: { select: { products: { where: { status: "APPROVED" } } } } },
@@ -19,7 +21,8 @@ export default async function HomePage() {
       where: { status: "APPROVED", isFeatured: true },
       orderBy: { soldCount: "desc" },
       take: 8,
-      include: {
+      select: {
+        ...publicProductSelect,
         category: { select: { name: true } },
         seller: { select: { name: true, isVerified: true } },
       },
@@ -28,7 +31,18 @@ export default async function HomePage() {
       where: { status: "APPROVED" },
       orderBy: { soldCount: "desc" },
       take: 8,
-      include: {
+      select: {
+        ...publicProductSelect,
+        category: { select: { name: true } },
+        seller: { select: { name: true, isVerified: true } },
+      },
+    }),
+    prisma.product.findMany({
+      where: { status: "APPROVED", isOfficial: true },
+      orderBy: { soldCount: "desc" },
+      take: 4,
+      select: {
+        ...publicProductSelect,
         category: { select: { name: true } },
         seller: { select: { name: true, isVerified: true } },
       },
@@ -36,6 +50,7 @@ export default async function HomePage() {
     prisma.banner.findMany({
       where: { status: "ACTIVE", placement: "HOME", OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }] },
       orderBy: { sortOrder: "asc" },
+      select: { id: true, title: true, imageUrl: true, linkUrl: true, durationMs: true },
     }),
   ]);
 
@@ -83,54 +98,39 @@ export default async function HomePage() {
       {/* BANNERS */}
       {banners.length > 0 && (
         <section className="section mb-14">
-          <div className="grid gap-4 md:grid-cols-3">
-            {banners.slice(0, 3).map((b) => (
-              <Link
-                key={b.id}
-                href={b.linkUrl || "/catalog"}
-                className="group relative h-40 overflow-hidden rounded-3xl border border-border/70 transition hover:border-primary/40"
-              >
-                {b.imageUrl ? (
-                  <img src={b.imageUrl} alt={b.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                ) : (
-                  <div className="grid h-full w-full place-items-center bg-gradient-to-br from-sky-600/40 to-violet-600/40">
-                    <Gamepad2 className="h-12 w-12 text-white/70" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                <p className="absolute bottom-4 left-4 font-display text-lg font-bold text-white drop-shadow">{b.title}</p>
-              </Link>
-            ))}
-          </div>
+          <BannerSlider banners={banners} />
         </section>
       )}
 
       {/* CATEGORIES */}
       <section className="section mb-16">
         <div className="mb-6 flex items-end justify-between">
-          <h2 className="font-display text-2xl font-bold sm:text-3xl">Категории</h2>
+          <h2 className="font-display text-2xl font-bold sm:text-3xl">Популярные игры</h2>
           <Link href="/catalog" className="inline-flex items-center gap-1 text-sm font-medium text-sky-400 transition hover:text-sky-300">
             Весь каталог <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/catalog?cat=${c.id}`}
-              className="group flex flex-col items-center gap-3 rounded-3xl border border-border/70 bg-card/60 p-6 text-center transition hover:-translate-y-1 hover:border-primary/40 hover:bg-card"
-            >
-              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-sky-500/20 to-violet-600/20 text-primary transition group-hover:from-sky-500 group-hover:to-violet-600 group-hover:text-white">
-                <CategoryIcon icon={c.icon} className="h-7 w-7" />
-              </span>
-              <span>
-                <span className="block text-sm font-semibold">{c.name}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{c._count.products} товаров</span>
-              </span>
-            </Link>
-          ))}
-        </div>
+        <GameCarousel items={categories.map((c) => ({ id: c.id, name: c.name, icon: c.icon, slug: c.slug }))} />
       </section>
+
+      {/* OFFICIAL */}
+      {official.length > 0 && (
+        <section className="section mb-16">
+          <div className="mb-6 flex items-end justify-between">
+            <h2 className="font-display flex items-center gap-2 text-2xl font-bold sm:text-3xl">
+              <ShieldCheck className="h-6 w-6 text-sky-400" /> Официальные предложения
+            </h2>
+            <Link href="/catalog?sort=popular" className="inline-flex items-center gap-1 text-sm font-medium text-sky-400 transition hover:text-sky-300">
+              Смотреть все <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {official.map((p) => (
+              <ProductCard key={p.id} product={p as unknown as ProductCardData} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FEATURED */}
       {featured.length > 0 && (

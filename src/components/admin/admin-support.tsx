@@ -1,21 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Headphones, Loader2, Lock, Send, User } from "lucide-react";
+import { Headphones, Loader2, Lock, Send, ShieldAlert, User } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { getSocket } from "@/lib/socket";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
+import { DealContext, type DealOrder } from "@/components/support/deal-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate, timeAgo, initials } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface AdminTicket {
   id: string;
   subject: string;
   status: "OPEN" | "IN_PROGRESS" | "CLOSED";
+  orderId: string | null;
   createdAt: string;
   updatedAt: string;
   user: { id: string; name: string; isVerified: boolean; avatarUrl: string | null };
@@ -34,7 +37,9 @@ interface TicketDetail {
   id: string;
   subject: string;
   status: string;
+  orderId: string | null;
   user: { id: string; name: string; isVerified: boolean; avatarUrl: string | null };
+  order: DealOrder | null;
   messages: ChatMessage[];
 }
 
@@ -177,7 +182,12 @@ export function AdminSupport({ adminId, adminName }: { adminId: string; adminNam
   const active = ticket;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+    <div
+      className={cn(
+        "grid gap-6",
+        active?.order ? "lg:grid-cols-[300px_minmax(0,1fr)_300px]" : "lg:grid-cols-[300px_1fr]"
+      )}
+    >
       <div className="flex flex-col rounded-3xl border border-border/80 bg-card/60 p-4">
         <h2 className="mb-3 text-sm font-semibold">Обращения ({tickets.length})</h2>
         <div className="-mr-1 flex max-h-[65vh] flex-col gap-1.5 overflow-y-auto pr-1">
@@ -195,8 +205,9 @@ export function AdminSupport({ adminId, adminName }: { adminId: string; adminNam
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 truncate text-sm font-medium">
-                    {t.user.name} {t.user.isVerified && <VerifiedBadge size="xs" />}
+                  <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-medium">
+                    {t.orderId && <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-400" aria-label="Спор" />}
+                    <span className="truncate">{t.user.name}</span> {t.user.isVerified && <VerifiedBadge size="xs" />}
                   </span>
                   <Badge className={statusLabel[t.status]?.className ?? ""}>{statusLabel[t.status]?.label ?? t.status}</Badge>
                 </div>
@@ -303,6 +314,8 @@ export function AdminSupport({ adminId, adminName }: { adminId: string; adminNam
           </>
         )}
       </div>
+
+      {active?.order && <DealContext order={active.order} />}
     </div>
   );
 }

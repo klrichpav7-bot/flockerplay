@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flame, Gamepad2, Star } from "lucide-react";
+import { BadgeCheck, Flame, Gamepad2, Star } from "lucide-react";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/format";
@@ -19,6 +19,7 @@ export interface ProductCardData {
   soldCount: number;
   rating: number;
   images: string[];
+  isOfficial?: boolean;
   category?: { name: string } | null;
   seller?: SellerPreview;
 }
@@ -50,6 +51,11 @@ export function ProductCard({ product, className }: { product: ProductCardData; 
           </div>
         )}
         <div className="absolute left-3 top-3 flex gap-2">
+          {product.isOfficial && (
+            <Badge className="bg-sky-500/95 text-white shadow-md backdrop-blur">
+              <BadgeCheck className="h-3 w-3" /> Официально
+            </Badge>
+          )}
           {product.category?.name && (
             <Badge variant="secondary" className="border-border bg-black/50 text-white backdrop-blur">
               {product.category.name}

@@ -31,14 +31,16 @@ export function NotificationsBell({ className }: { className?: string }) {
   const [loaded, setLoaded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const itemsRef = useRef<NotificationItem[]>([]);
+
   const load = useCallback(async (silent = false) => {
     try {
-      const data = await api<NotificationItem[]>("/api/notifications");
+      const data = await api<{ notifications: NotificationItem[] }>("/api/notifications");
       const prev = itemsRef.current;
-      setItems(data);
+      setItems(data.notifications);
       setLoaded(true);
-      if (!silent && prev && prev.length > 0 && data.length > prev.length) {
-        const fresh = data.slice(0, data.length - prev.length);
+      if (!silent && prev && prev.length > 0 && data.notifications.length > prev.length) {
+        const fresh = data.notifications.slice(0, data.notifications.length - prev.length);
         fresh.forEach((n) => {
           toast(n.title, {
             description: n.body ?? undefined,
@@ -46,13 +48,11 @@ export function NotificationsBell({ className }: { className?: string }) {
           });
         });
       }
-      itemsRef.current = data;
+      itemsRef.current = data.notifications;
     } catch {
       /* not authed */
     }
   }, []);
-
-  const itemsRef = useRef<NotificationItem[]>([]);
 
   useEffect(() => {
     load(true);

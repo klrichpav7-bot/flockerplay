@@ -1,10 +1,12 @@
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import sharp from "sharp";
 import { auth } from "@/lib/auth";
 import { error, json } from "@/lib/api";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"];
+const THUMBNABLE = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -17,11 +19,26 @@ export async function POST(req: Request) {
   if (file.size > 5 * 1024 * 1024) return error("Файл больше 5 МБ", 422);
 
   const ext = path.extname(file.name).toLowerCase() || ".png";
-  const name = `${crypto.randomBytes(8).toString("hex")}${ext}`;
+  const stem = crypto.randomBytes(8).toString("hex");
+  const name = `${stem}${ext}`;
   const dir = path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(dir, name), buffer);
 
-  return json({ url: `/uploads/${name}` });
+  let thumb = `/uploads/${name}`;
+  if (THUMBNABLE.has(file.type)) {
+    try {
+      const thumbName = `${stem}-thumb.webp`;
+      await sharp(buffer)
+        .resize({ width: 256, height: 256, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toFile(path.join(dir, thumbName));
+      thumb = `/uploads/${thumbName}`;
+    } catch {
+      thumb = `/uploads/${name}`;
+    }
+  }
+
+  return json({ url: `/uploads/${name}`, thumb });
 }

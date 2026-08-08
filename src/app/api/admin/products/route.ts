@@ -15,8 +15,10 @@ export async function GET(req: Request) {
     where,
     orderBy: { createdAt: "desc" },
     include: {
-      category: { select: { name: true } },
-      seller: { select: { id: true, name: true, isVerified: true } },
+      category: { select: { id: true, name: true, slug: true } },
+      subcategory: { select: { id: true, name: true, slug: true } },
+      seller: { select: { id: true, name: true, isVerified: true, avatarUrl: true, balance: true } },
+      _count: { select: { orderItems: true } },
     },
   });
 

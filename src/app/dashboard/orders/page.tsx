@@ -19,6 +19,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       product: { select: { id: true, title: true, images: true, deliveryType: true } },
       buyer: { select: { id: true, name: true, isVerified: true } },
       seller: { select: { id: true, name: true, isVerified: true } },
+      review: { select: { rating: true, comment: true } },
     },
   });
 

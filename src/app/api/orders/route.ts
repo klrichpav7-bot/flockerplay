@@ -23,6 +23,7 @@ export async function GET(req: Request) {
       product: { select: { id: true, title: true, images: true, deliveryType: true } },
       buyer: { select: { id: true, name: true, isVerified: true } },
       seller: { select: { id: true, name: true, isVerified: true } },
+      review: { select: { rating: true, comment: true } },
     },
   });
 
@@ -75,7 +76,37 @@ export async function POST(req: Request) {
 
   const buyer = await prisma.user.findUnique({ where: { id: userId } });
   if (!buyer) return error("Пользователь не найден", 404);
-  if (buyer.balance < total) return error(`Недостаточно средств. Нужно ${total.toLocaleString("ru-RU")} ₽`, 402);
+
+  let discountPct = 0;
+  let promoCode: string | null = null;
+  if (buyer.promoDiscountId) {
+    const promo = await prisma.promoCode.findUnique({ where: { id: buyer.promoDiscountId } });
+    const valid =
+      promo &&
+      promo.active &&
+      promo.type === "DISCOUNT" &&
+      (!promo.startsAt || new Date() >= promo.startsAt) &&
+      (!promo.expiresAt || new Date() <= promo.expiresAt);
+    if (valid) {
+      discountPct = Math.min(promo.value, 90);
+      promoCode = promo.code;
+    } else {
+      await prisma.user.update({ where: { id: userId }, data: { promoDiscountId: null } });
+    }
+  }
+
+  const lines = normalized.map(({ product, qty }) => {
+    const full = product.price * qty;
+    const final = discountPct > 0 ? Math.round((full * (100 - discountPct)) / 100) : full;
+    return { product, qty, full, final };
+  });
+
+  const charged = lines.reduce((s, l) => s + l.final, 0);
+  const discountAmount = total - charged;
+
+  if (buyer.balance < charged) {
+    return error(`Недостаточно средств. Нужно ${charged.toLocaleString("ru-RU")} ₽`, 402);
+  }
 
   const settings = await prisma.siteSetting.findUnique({ where: { id: "main" } });
   const commission = settings?.commission ?? 0;
@@ -83,17 +114,28 @@ export async function POST(req: Request) {
   const result = await prisma.$transaction(async (tx) => {
     await tx.user.update({
       where: { id: userId },
-      data: { balance: { decrement: total } },
+      data: {
+        balance: { decrement: charged },
+        ...(discountPct > 0 ? { promoDiscountId: null } : {}),
+      },
     });
     await tx.balanceTransaction.create({
-      data: { userId, type: "PURCHASE", amount: -total, reason: `Покупка товаров (${normalized.length} шт.)` },
+      data: {
+        userId,
+        type: "PURCHASE",
+        amount: -charged,
+        reason:
+          discountPct > 0
+            ? `Покупка товаров (${normalized.length} шт., скидка ${discountPct}%)`
+            : `Покупка товаров (${normalized.length} шт.)`,
+      },
     });
 
     const createdOrders = [];
 
-    for (const { product, qty } of normalized) {
+    for (const { product, qty, final } of lines) {
       const isAuto = product.deliveryType === "AUTO";
-      const sellerPayout = Math.round((product.price * qty * (100 - commission)) / 100);
+      const sellerAmount = Math.round((product.price * qty * (100 - commission)) / 100);
 
       if (product.stock > 0) {
         await tx.product.update({ where: { id: product.id }, data: { stock: { decrement: qty } } });
@@ -105,25 +147,13 @@ export async function POST(req: Request) {
           buyerId: userId,
           sellerId: product.sellerId,
           productId: product.id,
-          total: product.price * qty,
+          total: final,
           qty,
+          sellerAmount,
           buyerNote,
           status: isAuto ? "DELIVERED" : "PAID",
           deliveryInfo: product.deliveryInfo,
           deliveredAt: isAuto ? new Date() : null,
-        },
-      });
-
-      await tx.user.update({
-        where: { id: product.sellerId },
-        data: { balance: { increment: sellerPayout } },
-      });
-      await tx.balanceTransaction.create({
-        data: {
-          userId: product.sellerId,
-          type: "SALE",
-          amount: sellerPayout,
-          reason: `Продажа: ${product.title} ×${qty}`,
         },
       });
 
@@ -134,7 +164,7 @@ export async function POST(req: Request) {
       data: {
         userId,
         title: "Заказ оформлен",
-        body: `Списано ${total.toLocaleString("ru-RU")} ₽. Заказ №${createdOrders[0]?.id ?? ""}`,
+        body: `Списано ${charged.toLocaleString("ru-RU")} ₽. Заказ №${createdOrders[0]?.id ?? ""}`,
         type: "order",
       },
     });
@@ -142,7 +172,7 @@ export async function POST(req: Request) {
       data: normalized.map(({ product, qty }) => ({
         userId: product.sellerId,
         title: "Новый заказ",
-        body: `${product.title} ×${qty} на ${(product.price * qty).toLocaleString("ru-RU")} ₽`,
+        body: `${product.title} ×${qty} на ${(product.price * qty).toLocaleString("ru-RU")} ₽. Средства зачислятся после подтверждения сделки покупателем.`,
         type: "order",
       })),
     });
@@ -151,5 +181,5 @@ export async function POST(req: Request) {
     return { orders: createdOrders, newBalance: newBuyer?.balance ?? 0 };
   });
 
-  return json({ orders: result.orders, newBalance: result.newBalance, total }, 201);
+  return json({ orders: result.orders, newBalance: result.newBalance, total: charged }, 201);
 }

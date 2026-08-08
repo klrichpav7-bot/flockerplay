@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Coins, Package, PlusCircle, ShoppingBag, TrendingUp, Wallet } from "lucide-react";
+import { Coins, Lock, Package, PlusCircle, ShoppingBag, TrendingUp, Wallet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { releaseMaturedFunds } from "@/lib/finance";
 import { formatPrice, timeAgo } from "@/lib/format";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
+import { PromoActivator } from "@/components/dashboard/promo-activator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,6 +24,8 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
+
+  await releaseMaturedFunds();
 
   const [user, orders, products, topUps, salesAgg, recentTx] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
@@ -81,6 +85,11 @@ export default async function DashboardPage() {
           <TrendingUp className="h-5 w-5 text-amber-400" />
           <p className="mt-3 text-2xl font-bold">{formatPrice(salesAgg._sum.amount ?? 0)}</p>
           <p className="text-xs text-muted-foreground">Доход с продаж</p>
+        </div>
+        <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-5">
+          <Lock className="h-5 w-5 text-amber-400" />
+          <p className="mt-3 text-2xl font-bold text-amber-400">{formatPrice(user.heldBalance)}</p>
+          <p className="text-xs text-muted-foreground">Заморожено на 3 дня</p>
         </div>
       </div>
 
@@ -154,6 +163,8 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      <PromoActivator />
     </div>
   );
 }

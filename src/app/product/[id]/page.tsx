@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Clock, Flame, KeyRound, MessageCircle, ShieldCheck, Star } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { publicProductSelect } from "@/lib/product-public";
 import { BuyPanel } from "@/components/product/buy-panel";
 import { ProductCard, type ProductCardData } from "@/components/shared/product-card";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
@@ -18,7 +19,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   const product = await prisma.product.findUnique({
     where: { id },
-    include: {
+    select: {
+      ...publicProductSelect,
       category: { select: { id: true, name: true } },
       seller: {
         select: {
@@ -42,7 +44,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     where: { status: "APPROVED", categoryId: product.categoryId, id: { not: product.id } },
     orderBy: { soldCount: "desc" },
     take: 4,
-    include: {
+    select: {
+      ...publicProductSelect,
       category: { select: { name: true } },
       seller: { select: { name: true, isVerified: true } },
     },
@@ -107,7 +110,9 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 {product.deliveryType === "AUTO" ? "Как получить товар" : "Условия выдачи"}
               </h3>
               <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
-                {product.deliveryInfo || "Данные придут продавцом после оплаты."}
+                {product.deliveryType === "AUTO"
+                  ? "Логин, пароль или ключи будут показаны сразу после оплаты на странице заказа — данные видны только покупателю."
+                  : "Данные для получения товара продавец передаст покупателю после оплаты."}
               </p>
             </div>
           </div>
@@ -146,10 +151,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   <AvatarFallback>{initials(product.seller.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="flex items-center gap-1.5 font-semibold">
+                  <Link href={`/seller/${product.sellerId}`} className="flex items-center gap-1.5 font-semibold transition hover:text-sky-400">
                     {product.seller.name}
                     {product.seller.isVerified && <VerifiedBadge size="sm" />}
-                  </p>
+                  </Link>
                   <p className="text-xs text-muted-foreground">
                     {product.seller._count.soldOrders} продаж · продавец с {formatDate(product.seller.createdAt)}
                   </p>
@@ -159,6 +164,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <p className="mt-3 text-sm text-muted-foreground">{product.seller.about}</p>
               )}
               <div className="mt-4 grid grid-cols-2 gap-2">
+                <Link
+                  href={`/seller/${product.sellerId}`}
+                  className="rounded-xl border border-border bg-card/60 py-2.5 text-center text-sm font-medium transition hover:border-primary/40"
+                >
+                  Профиль продавца
+                </Link>
                 <Link
                   href={`/catalog?seller=${product.sellerId}`}
                   className="rounded-xl border border-border bg-card/60 py-2.5 text-center text-sm font-medium transition hover:border-primary/40"

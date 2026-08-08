@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Banknote,
   Flag,
   LayoutDashboard,
   Megaphone,
+  MessagesSquare,
   Package,
   ShoppingBag,
   Store,
@@ -17,7 +19,9 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/dashboard", label: "Обзор", icon: LayoutDashboard },
   { href: "/dashboard/topup", label: "Пополнение", icon: Wallet },
+  { href: "/dashboard/withdrawals", label: "Вывод средств", icon: Banknote },
   { href: "/dashboard/orders", label: "Мои заказы", icon: ShoppingBag },
+  { href: "/dashboard/chats", label: "Чаты", icon: MessagesSquare },
   { href: "/dashboard/sales", label: "Продажи", icon: TrendingUp },
   { href: "/dashboard/products", label: "Мои товары", icon: Package },
   { href: "/dashboard/products/new", label: "Добавить товар", icon: Store },

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { publicProductSelect } from "@/lib/product-public";
 import { productSchema } from "@/lib/validations";
 import { error, json } from "@/lib/api";
 
@@ -33,7 +34,8 @@ export async function GET(req: Request) {
   const products = await prisma.product.findMany({
     where,
     orderBy,
-    include: {
+    select: {
+      ...publicProductSelect,
       category: { select: { name: true, slug: true } },
       seller: { select: { id: true, name: true, isVerified: true, avatarUrl: true } },
     },

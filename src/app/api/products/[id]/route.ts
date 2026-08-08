@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { productSchema } from "@/lib/validations";
+import { publicProductSelect } from "@/lib/product-public";
+import { productBaseSchema } from "@/lib/validations";
 import { error, json, isAdmin } from "@/lib/api";
 
 async function findProduct(id: string) {
   return prisma.product.findUnique({
     where: { id },
-    include: {
+    select: {
+      ...publicProductSelect,
       category: { select: { id: true, name: true, slug: true } },
       seller: {
         select: { id: true, name: true, isVerified: true, isSeller: true, avatarUrl: true, about: true, createdAt: true },
@@ -42,7 +44,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const body = await req.json().catch(() => null);
-  const parsed = productSchema.partial().safeParse(body);
+  const parsed = productBaseSchema.partial().safeParse(body);
   if (!parsed.success) return error(parsed.error.issues[0]?.message ?? "Ошибка валидации", 422);
 
   const data = parsed.data;

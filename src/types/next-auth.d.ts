@@ -9,7 +9,9 @@ declare module "next-auth" {
       isVerified: boolean;
       isSeller: boolean;
       balance: number;
+      heldBalance: number;
       avatarUrl?: string | null;
+      needsSetup: boolean;
     } & DefaultSession["user"];
   }
 
@@ -19,7 +21,9 @@ declare module "next-auth" {
     isVerified: boolean;
     isSeller: boolean;
     balance: number;
+    heldBalance: number;
     avatarUrl?: string | null;
+    needsSetup: boolean;
   }
 }
 
@@ -30,6 +34,8 @@ declare module "next-auth/jwt" {
     isVerified?: boolean;
     isSeller?: boolean;
     balance?: number;
+    heldBalance?: number;
     avatarUrl?: string | null;
+    needsSetup?: boolean;
   }
 }
