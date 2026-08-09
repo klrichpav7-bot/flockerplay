@@ -2,6 +2,34 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { error, json, isAdmin } from "@/lib/api";
 
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await auth();
+  if (!isAdmin(session)) return error("Нет доступа", 403);
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          products: true,
+          orders: true,
+          soldOrders: true,
+          tickets: true,
+          reviewsMade: true,
+          reviewsReceived: true,
+          complaintsMade: true,
+          complaintsOnMe: true,
+        },
+      },
+    },
+  });
+  if (!user) return error("Пользователь не найден", 404);
+
+  const { passwordHash, ...safe } = user;
+  return json({ user: safe });
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();

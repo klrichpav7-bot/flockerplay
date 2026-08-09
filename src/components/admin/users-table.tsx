@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Coins, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, Ban, UserCheck } from "lucide-react";
+import { Coins, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, Ban, UserCheck, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { formatPrice, initials, formatDate } from "@/lib/format";
+import { UserCardDialog } from "@/components/admin/user-card";
 
 interface AdminUser {
   id: string;
@@ -33,6 +34,7 @@ export function UsersTable() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [balanceTarget, setBalanceTarget] = useState<AdminUser | null>(null);
+  const [cardTarget, setCardTarget] = useState<AdminUser | null>(null);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [balanceLoading, setBalanceLoading] = useState(false);
@@ -142,6 +144,14 @@ export function UsersTable() {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => setCardTarget(u)}
+                    disabled={busy === u.id}
+                  >
+                    <UserRound className="h-3.5 w-3.5" /> О нём
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setBalanceTarget(u)}
                     disabled={busy === u.id}
                   >
@@ -214,6 +224,8 @@ export function UsersTable() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <UserCardDialog userId={cardTarget?.id ?? null} open={!!cardTarget} onOpenChange={(o) => !o && setCardTarget(null)} />
     </div>
   );
 }

@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageCircle, MessagesSquare } from "lucide-react";
+import { Bell, Headphones, MessageCircle, MessagesSquare } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { getSocket } from "@/lib/socket";
 import { timeAgo, initials } from "@/lib/format";
 import type { OrderChatDto } from "@/lib/chats";
+import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -71,23 +72,64 @@ export function OrderChatsList({
         )}
       </div>
 
-      {chats.length === 0 ? (
-        <div className="rounded-3xl border border-border/80 bg-card/60 p-10 text-center">
-          <MessagesSquare className="mx-auto h-10 w-10 text-muted-foreground/40" />
-          <p className="mt-3 text-lg font-semibold">Чатов пока нет</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Диалоги по заказам появятся здесь — покупатель и продавец обсуждают сделку прямо на странице заказа.
-          </p>
-          <Link
-            href="/catalog"
-            className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary/90"
-          >
-            Перейти в каталог
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {chats.map((c) => {
+      <div className="space-y-3">
+        <Link
+          href="/support"
+          className="flex items-center gap-3 rounded-3xl border border-border/80 bg-card/60 p-4 transition hover:border-primary/40 hover:bg-card sm:gap-4"
+        >
+          <Avatar className="h-12 w-12 shrink-0 bg-sky-500/15 text-sky-400 ring-2 ring-sky-500/25">
+            <AvatarFallback>
+              <Headphones className="h-5 w-5" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold">Поддержка</p>
+              <VerifiedBadge size="xs" />
+            </div>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">Работает 24/7</p>
+          </div>
+          <span className="relative flex h-2.5 w-2.5 shrink-0" aria-label="В сети">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-60" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
+          </span>
+        </Link>
+
+        <Link
+          href="/dashboard/notifications"
+          className="flex items-center gap-3 rounded-3xl border border-border/80 bg-card/60 p-4 transition hover:border-primary/40 hover:bg-card sm:gap-4"
+        >
+          <Avatar className="h-12 w-12 shrink-0 bg-violet-500/15 text-violet-400 ring-2 ring-violet-500/25">
+            <AvatarFallback>
+              <Bell className="h-5 w-5" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold">Официальные уведомления</p>
+              <VerifiedBadge size="xs" />
+            </div>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">Официальный чат</p>
+          </div>
+          <MessageCircle className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+        </Link>
+
+        {chats.length === 0 ? (
+          <div className="rounded-3xl border border-border/80 bg-card/60 p-10 text-center">
+            <MessagesSquare className="mx-auto h-10 w-10 text-muted-foreground/40" />
+            <p className="mt-3 text-lg font-semibold">Чатов пока нет</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Диалоги по заказам появятся здесь — покупатель и продавец обсуждают сделку прямо на странице заказа.
+            </p>
+            <Link
+              href="/catalog"
+              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary/90"
+            >
+              Перейти в каталог
+            </Link>
+          </div>
+        ) : (
+          chats.map((c) => {
             const st = statusMap[c.status] ?? { label: c.status, className: "" };
             return (
               <Link
@@ -137,9 +179,9 @@ export function OrderChatsList({
                 </div>
               </Link>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 }

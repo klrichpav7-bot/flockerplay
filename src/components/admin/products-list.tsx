@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BadgeCheck, Check, ChevronRight, Eye, EyeOff, Loader2, Star, X } from "lucide-react";
+import { BadgeCheck, Check, ChevronRight, Copy, Eye, EyeOff, Loader2, Star, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
+import { UserCardDialog } from "@/components/admin/user-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -56,6 +57,8 @@ export function ProductsList() {
   const [busy, setBusy] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminProduct | null>(null);
   const [detailIndex, setDetailIndex] = useState(0);
+  const [sellerCard, setSellerCard] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async (status: string) => {
     setLoading(true);
@@ -297,10 +300,28 @@ export function ProductsList() {
                       Продавец
                     </p>
                     <div className="flex items-center justify-between gap-2 rounded-2xl bg-muted/40 p-3 text-sm">
-                      <span className="flex items-center gap-1.5">
-                        {detail.seller.name} {detail.seller.isVerified && <VerifiedBadge size="xs" />}
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        {detail.seller.avatarUrl ? (
+                          <img
+                            src={detail.seller.avatarUrl}
+                            alt=""
+                            className="h-6 w-6 shrink-0 rounded-full bg-muted object-cover"
+                          />
+                        ) : (
+                          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-[10px] text-muted-foreground">
+                            {(detail.seller.name[0] ?? "").toUpperCase()}
+                          </span>
+                        )}
+                        <span className="truncate">
+                          {detail.seller.name} {detail.seller.isVerified && <VerifiedBadge size="xs" />}
+                        </span>
                       </span>
-                      <span className="text-muted-foreground">баланс {formatPrice(detail.seller.balance)}</span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <span className="text-muted-foreground">баланс {formatPrice(detail.seller.balance)}</span>
+                        <Button variant="outline" size="sm" onClick={() => setSellerCard(detail.seller.id)}>
+                          <UserRound className="h-3.5 w-3.5" /> О нём
+                        </Button>
+                      </span>
                     </div>
                   </div>
 
@@ -308,9 +329,29 @@ export function ProductsList() {
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Данные для доставки {detail.deliveryType === "AUTO" ? "(авто)" : "(ручная)"}
                     </p>
-                    <pre className="whitespace-pre-wrap break-words rounded-2xl border border-dashed border-border/70 bg-muted/40 p-3 font-mono text-xs text-emerald-400">
-                      {detail.deliveryInfo || "—"}
-                    </pre>
+                    <div className="relative rounded-2xl border border-dashed border-border/70 bg-muted/40 p-3">
+                      <pre className="whitespace-pre-wrap break-words font-mono text-xs text-emerald-400">
+                        {detail.deliveryInfo || "—"}
+                      </pre>
+                      {detail.deliveryInfo && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute right-2 top-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(detail.deliveryInfo).catch(() => {});
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 1500);
+                          }}
+                        >
+                          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copied ? "Скопировано" : "Копировать"}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      ID товара: <span className="font-mono">{detail.id}</span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -340,6 +381,8 @@ export function ProductsList() {
           )}
         </DialogContent>
       </Dialog>
+
+      <UserCardDialog userId={sellerCard} open={!!sellerCard} onOpenChange={(o) => !o && setSellerCard(null)} />
     </div>
   );
 }
