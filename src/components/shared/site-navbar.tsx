@@ -23,6 +23,7 @@ import { NotificationsBell } from "@/components/shared/notifications";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { ChatsLink } from "@/components/shared/chats-link";
 import { NavSearch } from "@/components/shared/nav-search";
+import { MobileSearch } from "@/components/shared/mobile-search";
 import { useCartStore, cartCount } from "@/store/cart";
 import { useUserStore } from "@/store/user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -97,7 +98,7 @@ export function SiteNavbar() {
 
           {user && <NotificationsBell className="hidden sm:block" />}
           {user && <ChatsLink className="hidden sm:grid" />}
-          <ThemeToggle className="hidden sm:grid" />
+          <ThemeToggle />
 
           {status === "loading" ? (
             <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
@@ -142,6 +143,10 @@ export function SiteNavbar() {
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
+      </div>
+
+      <div className="border-t border-border/50 px-4 py-2.5 lg:hidden">
+        <MobileSearch />
       </div>
 
       {mobileOpen && (

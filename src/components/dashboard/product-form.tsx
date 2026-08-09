@@ -35,9 +35,10 @@ interface ProductFormProps {
     deliveryInfo: string;
     images: string[];
   };
+  admin?: boolean;
 }
 
-export function ProductForm({ initial }: ProductFormProps) {
+export function ProductForm({ initial, admin }: ProductFormProps) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
@@ -90,7 +91,11 @@ export function ProductForm({ initial }: ProductFormProps) {
     setLoading(true);
     try {
       const payload = { ...values, images };
-      if (initial) {
+      if (admin) {
+        await api("/api/admin/products", { method: "POST", body: JSON.stringify(payload) });
+        toast.success("Официальный товар опубликован", { description: "Он появится в каталоге и на главной в первом ряду." });
+        router.push("/admin/products");
+      } else if (initial) {
         await api(`/api/products/${initial.id}`, { method: "PATCH", body: JSON.stringify(payload) });
         toast.success("Товар обновлён", { description: "После изменений товар снова проходит модерацию." });
       } else {
@@ -199,7 +204,7 @@ export function ProductForm({ initial }: ProductFormProps) {
       <Button type="submit" className="w-full sm:w-auto" disabled={loading} size="lg">
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         <Save className="h-4 w-4" />
-        {initial ? "Сохранить изменения" : "Опубликовать товар"}
+        {initial ? "Сохранить изменения" : admin ? "Опубликовать официальный товар" : "Опубликовать товар"}
       </Button>
     </form>
   );

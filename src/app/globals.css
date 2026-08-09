@@ -152,9 +152,14 @@
     display: none;
   }
 
-  .no-scrollbar {
+  .no-scrollbar,
+  .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 

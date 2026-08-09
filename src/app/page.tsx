@@ -19,7 +19,7 @@ export default async function HomePage() {
     }),
     prisma.product.findMany({
       where: { status: "APPROVED", isFeatured: true },
-      orderBy: { soldCount: "desc" },
+      orderBy: [{ isOfficial: "desc" }, { soldCount: "desc" }],
       take: 8,
       select: {
         ...publicProductSelect,
@@ -29,7 +29,7 @@ export default async function HomePage() {
     }),
     prisma.product.findMany({
       where: { status: "APPROVED" },
-      orderBy: { soldCount: "desc" },
+      orderBy: [{ isOfficial: "desc" }, { soldCount: "desc" }],
       take: 8,
       select: {
         ...publicProductSelect,
@@ -60,31 +60,31 @@ export default async function HomePage() {
 
   return (
     <div className="pb-20">
-      {/* HERO */}
-      <section className="section relative pt-16 pb-14 sm:pt-24 sm:pb-20">
+      {/* HERO (desktop only) */}
+      <section className="section relative hidden pt-10 pb-10 sm:pt-16 sm:pb-14 lg:block">
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="border-primary/30 bg-primary/10 px-4 py-1.5 text-primary">
             <Zap className="h-3.5 w-3.5" /> Мгновенная доставка цифровых товаров
           </Badge>
-          <h1 className="font-display mt-6 text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
+          <h1 className="font-display mt-5 text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
             Игровой маркетплейс
             <span className="text-gradient block">товаров и услуг</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Ключи, внутриигровая валюта, буст, донаты и подарочные карты от проверенных продавцов. Безопасные сделки
             и пополнение баланса за пару кликов.
           </p>
-          <div className="mt-8">
+          <div className="mt-6">
             <HeroSearch />
           </div>
 
-          <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
+          <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-6">
             {[
               { value: `${formatNumber(totalSold._sum.soldCount ?? 0)}+`, label: "продаж" },
               { value: `${formatNumber(sellersCount)}`, label: "продавцов" },
               { value: `${formatNumber(totalUsers)}`, label: "игроков" },
             ].map((s) => (
-              <div key={s.label} className="rounded-2xl border border-border/60 bg-card/50 px-3 py-4">
+              <div key={s.label} className="rounded-2xl border border-border/60 bg-card/50 px-3 py-3 sm:py-4">
                 <p className="font-display text-2xl font-bold text-gradient sm:text-3xl">{s.value}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
               </div>
@@ -97,14 +97,14 @@ export default async function HomePage() {
 
       {/* BANNERS */}
       {banners.length > 0 && (
-        <section className="section mb-14">
+        <section className="section mb-10">
           <BannerSlider banners={banners} />
         </section>
       )}
 
       {/* CATEGORIES */}
-      <section className="section mb-16">
-        <div className="mb-6 flex items-end justify-between">
+      <section className="section mb-12">
+        <div className="mb-5 flex items-end justify-between">
           <h2 className="font-display text-2xl font-bold sm:text-3xl">Популярные игры</h2>
           <Link href="/catalog" className="inline-flex items-center gap-1 text-sm font-medium text-sky-400 transition hover:text-sky-300">
             Весь каталог <ArrowRight className="h-4 w-4" />
@@ -113,10 +113,39 @@ export default async function HomePage() {
         <GameCarousel items={categories.map((c) => ({ id: c.id, name: c.name, icon: c.icon, slug: c.slug }))} />
       </section>
 
+      {/* TYPES / FILTERS (mobile) */}
+      <section className="section mb-10 lg:hidden">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold">Типы товаров</h2>
+          <Link href="/catalog" className="text-sm font-medium text-sky-400 transition hover:text-sky-300">
+            Весь каталог
+          </Link>
+        </div>
+        <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {[
+            { label: "Донат", href: "/catalog?q=%D0%B4%D0%BE%D0%BD%D0%B0%D1%82" },
+            { label: "Подписки", href: "/catalog?q=%D0%BF%D0%BE%D0%B4%D0%BF%D0%B8%D1%81%D0%BA" },
+            { label: "Аккаунты", href: "/catalog?q=%D0%B0%D0%BA%D0%BA%D0%B0%D1%83%D0%BD%D1%82" },
+            { label: "Предметы", href: "/catalog?q=%D0%BF%D1%80%D0%B5%D0%B4%D0%BC%D0%B5%D1%82" },
+            { label: "Ключи", href: "/catalog?q=%D0%BA%D0%BB%D1%8E%D1%87" },
+            { label: "Валюта", href: "/catalog?q=%D0%B2%D0%B0%D0%BB%D1%8E%D1%82%D0%B0" },
+            { label: "ТГ-звёзды", href: "/stars" },
+          ].map((t) => (
+            <Link
+              key={t.label}
+              href={t.href}
+              className="shrink-0 rounded-full border border-border bg-card/60 px-4 py-2 text-sm font-medium text-foreground/80 transition hover:border-primary/40 hover:text-foreground"
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* OFFICIAL */}
       {official.length > 0 && (
-        <section className="section mb-16">
-          <div className="mb-6 flex items-end justify-between">
+        <section className="section mb-12">
+          <div className="mb-5 flex items-end justify-between">
             <h2 className="font-display flex items-center gap-2 text-2xl font-bold sm:text-3xl">
               <ShieldCheck className="h-6 w-6 text-sky-400" /> Официальные предложения
             </h2>
@@ -124,7 +153,7 @@ export default async function HomePage() {
               Смотреть все <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {official.map((p) => (
               <ProductCard key={p.id} product={p as unknown as ProductCardData} />
             ))}
@@ -134,14 +163,14 @@ export default async function HomePage() {
 
       {/* FEATURED */}
       {featured.length > 0 && (
-        <section className="section mb-16">
-          <div className="mb-6 flex items-end justify-between">
+        <section className="section mb-12">
+          <div className="mb-5 flex items-end justify-between">
             <h2 className="font-display text-2xl font-bold sm:text-3xl">Рекомендуем</h2>
             <Link href="/catalog" className="inline-flex items-center gap-1 text-sm font-medium text-sky-400 transition hover:text-sky-300">
               Весь каталог <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {featured.map((p) => (
               <ProductCard key={p.id} product={p as unknown as ProductCardData} />
             ))}
@@ -151,14 +180,14 @@ export default async function HomePage() {
 
       {/* TOP */}
       {popular.length > 0 && (
-        <section className="section mb-16">
-          <div className="mb-6 flex items-end justify-between">
+        <section className="section mb-12">
+          <div className="mb-5 flex items-end justify-between">
             <h2 className="font-display text-2xl font-bold sm:text-3xl">Топ продаж</h2>
             <Link href="/catalog?sort=popular" className="inline-flex items-center gap-1 text-sm font-medium text-sky-400 transition hover:text-sky-300">
               Смотреть все <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {popular.map((p) => (
               <ProductCard key={p.id} product={p as unknown as ProductCardData} />
             ))}
@@ -167,9 +196,9 @@ export default async function HomePage() {
       )}
 
       {/* HOW IT WORKS */}
-      <section className="section mb-16">
-        <h2 className="font-display mb-8 text-center text-2xl font-bold sm:text-3xl">Как это работает</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+      <section className="section mb-12 hidden lg:block">
+        <h2 className="font-display mb-6 text-center text-2xl font-bold sm:text-3xl">Как это работает</h2>
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
           {[
             { icon: Wallet, title: "Пополните баланс", text: "Создайте заявку на пополнение — админ подтвердит её в течение нескольких минут." },
             { icon: Timer, title: "Выберите товар", text: "Найдите нужный ключ, валюту или услугу в каталоге. Автоматическая выдача — за секунды." },
@@ -187,7 +216,7 @@ export default async function HomePage() {
       </section>
 
       {/* SELLER CTA */}
-      <section className="section">
+      <section className="section hidden lg:block">
         <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-sky-600/20 via-indigo-600/15 to-violet-600/20 p-8 text-center sm:p-14">
           <div className="mesh-blob left-[-5%] top-[-40%] h-64 w-64 bg-sky-500/40" />
           <div className="mesh-blob bottom-[-40%] right-[-5%] h-64 w-64 bg-violet-600/40" />

@@ -42,10 +42,10 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
           : sort === "price-desc"
             ? { price: "desc" }
             : sort === "rating"
-              ? { rating: "desc" }
+              ? [{ isOfficial: "desc" }, { rating: "desc" }]
               : sort === "newest"
                 ? { createdAt: "desc" }
-                : { soldCount: "desc" },
+                : [{ isOfficial: "desc" }, { soldCount: "desc" }],
       select: {
         ...publicProductSelect,
         category: { select: { name: true } },
@@ -140,7 +140,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
           </Link>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {products.map((p) => (
             <ProductCard key={p.id} product={p as unknown as ProductCardData} />
           ))}

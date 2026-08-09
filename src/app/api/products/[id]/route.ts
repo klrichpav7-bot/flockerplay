@@ -59,6 +59,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       stock: data.stock,
       deliveryType: data.deliveryType,
       deliveryInfo: data.deliveryInfo,
+      images: data.images,
       status: isAdmin(session) ? existing.status : "PENDING",
     },
   });

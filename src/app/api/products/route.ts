@@ -68,6 +68,7 @@ export async function POST(req: Request) {
       stock: data.stock,
       deliveryType: data.deliveryType,
       deliveryInfo: data.deliveryInfo,
+      images: data.images,
       status: "PENDING",
     },
   });

@@ -8,6 +8,8 @@ import { TopBanner } from "@/components/shared/top-banner";
 import { SiteNavbar } from "@/components/shared/site-navbar";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SessionGate } from "@/components/shared/session-gate";
+import { PageTransition } from "@/components/shared/page-transition";
+import { MobileNav } from "@/components/shared/mobile-nav";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -51,13 +53,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <SessionGate />
           <BackgroundFX />
-          <div className="relative z-10 flex min-h-screen flex-col">
+          <div className="relative z-10 flex min-h-screen flex-col pb-16 lg:pb-0">
             <TopBanner />
             <SiteNavbar />
             <main className="flex-1">{children}</main>
             <SiteFooter />
           </div>
           <Toaster />
+          <PageTransition />
+          <MobileNav />
         </Providers>
       </body>
     </html>

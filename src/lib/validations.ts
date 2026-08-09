@@ -25,6 +25,7 @@ export const productBaseSchema = z.object({
   stock: z.coerce.number().int("Остаток должен быть целым").min(0, "Остаток не может быть отрицательным").default(0),
   deliveryType: z.enum(["AUTO", "MANUAL"], { message: "Выберите тип выдачи" }),
   deliveryInfo: z.string().trim().max(2000),
+  images: z.array(z.string().min(1).max(500)).max(8, "Максимум 8 изображений").optional().default([]),
 });
 
 export const productSchema = productBaseSchema.superRefine((val, ctx) => {
