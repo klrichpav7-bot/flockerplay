@@ -12,7 +12,7 @@ export async function findStarsProduct() {
     where: {
       status: "APPROVED",
       ...(starsSub ? { subcategoryId: starsSub.id } : {}),
-      OR: [{ title: { contains: "звёзд", mode: "insensitive" } }],
+      OR: [{ title: { contains: "звёзд" } }],
     },
     orderBy: { createdAt: "asc" },
   });
@@ -20,7 +20,7 @@ export async function findStarsProduct() {
   if (product) return product;
 
   return prisma.product.findFirst({
-    where: { status: "APPROVED", title: { contains: "звёзд", mode: "insensitive" } },
+    where: { status: "APPROVED", title: { contains: "звёзд" } },
     orderBy: { createdAt: "asc" },
   });
 }

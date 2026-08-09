@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { productImages } from "@/lib/product-images";
 
 export interface ChatCounterpart {
   id: string;
@@ -64,7 +65,7 @@ export async function getOrderChats(userId: string): Promise<OrderChatDto[]> {
       createdAt: o.createdAt.toISOString(),
       isBuyer,
       productTitle: o.product?.title ?? null,
-      productImage: o.product?.images?.[0] ?? null,
+      productImage: productImages(o.product?.images)[0] ?? null,
       counterpart: {
         id: counterpart.id,
         name: counterpart.name,

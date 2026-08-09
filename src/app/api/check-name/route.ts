@@ -13,7 +13,7 @@ export async function GET(req: Request) {
 
   const existing = await prisma.user.findFirst({
     where: {
-      name: { equals: name, mode: "insensitive" },
+      name: { equals: name },
       ...(session?.user?.id ? { id: { not: session.user.id } } : {}),
     },
     select: { id: true },

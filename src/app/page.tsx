@@ -5,6 +5,7 @@ import { ProductCard, type ProductCardData } from "@/components/shared/product-c
 import { HeroSearch } from "@/components/home/hero-search";
 import { BannerSlider } from "@/components/home/banner-slider";
 import { GameCarousel } from "@/components/home/game-carousel";
+import { AppIcon } from "@/components/shared/app-icon";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ShieldCheck, Timer, Wallet, Zap } from "lucide-react";
 import { formatNumber } from "@/lib/format";
@@ -102,8 +103,8 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* CATEGORIES */}
-      <section className="section mb-12">
+      {/* CATEGORIES (desktop) */}
+      <section className="section mb-12 hidden lg:block">
         <div className="mb-5 flex items-end justify-between">
           <h2 className="font-display text-2xl font-bold sm:text-3xl">Популярные игры</h2>
           <Link href="/catalog" className="inline-flex items-center gap-1 text-sm font-medium text-sky-400 transition hover:text-sky-300">
@@ -137,6 +138,33 @@ export default async function HomePage() {
               className="shrink-0 rounded-full border border-border bg-card/60 px-4 py-2 text-sm font-medium text-foreground/80 transition hover:border-primary/40 hover:text-foreground"
             >
               {t.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* CATEGORY GRID (mobile) */}
+      <section className="section mb-12 lg:hidden">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold">Категории</h2>
+          <Link href="/catalog" className="text-sm font-medium text-sky-400 transition hover:text-sky-300">
+            Все разделы
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {categories.map((c) => (
+            <Link
+              key={c.id}
+              href={`/catalog?cat=${c.id}`}
+              className="flex items-center gap-3 rounded-2xl border border-border/80 bg-card/60 p-4 transition active:scale-[0.98]"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-sky-500/20 to-violet-600/20">
+                <AppIcon icon={c.icon} className="h-5 w-5" textClassName="text-lg" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold">{c.name}</span>
+                <span className="block text-xs text-muted-foreground">{c._count.products} товаров</span>
+              </span>
             </Link>
           ))}
         </div>

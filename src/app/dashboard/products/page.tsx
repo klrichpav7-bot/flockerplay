@@ -7,6 +7,7 @@ import { DeleteProductButton } from "@/components/dashboard/delete-product-butto
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
+import { productImages } from "@/lib/product-images";
 
 export const dynamic = "force-dynamic";
 
@@ -60,8 +61,8 @@ export default async function MyProductsPage() {
             return (
               <div key={p.id} className="flex flex-wrap items-center gap-4 rounded-3xl border border-border/80 bg-card/60 p-4">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-muted/40">
-                  {p.images?.[0] ? (
-                    <img src={p.images[0]} alt="" className="h-full w-full object-cover" />
+                  {productImages(p.images)[0] ? (
+                    <img src={productImages(p.images)[0]} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <span className="grid h-full w-full place-items-center text-xs text-muted-foreground">—</span>
                   )}

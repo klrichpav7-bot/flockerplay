@@ -10,6 +10,7 @@ import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, initials, formatPrice, formatNumber } from "@/lib/format";
+import { productImages } from "@/lib/product-images";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const discount = product.oldPrice && product.oldPrice > product.price
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : 0;
+  const images = productImages(product.images);
 
   return (
     <div className="section py-10">
@@ -68,8 +70,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       <div className="grid gap-8 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-card/60">
-            {product.images?.[0] ? (
-              <img src={product.images[0]} alt={product.title} className="aspect-[16/9] w-full object-cover" />
+            {images[0] ? (
+              <img src={images[0]} alt={product.title} className="aspect-[16/9] w-full object-cover" />
             ) : (
               <div className="grid aspect-[16/9] w-full place-items-center bg-gradient-to-br from-sky-600/30 to-violet-600/30">
                 <KeyRound className="h-20 w-20 text-white/50" />
@@ -127,7 +129,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 price={product.price}
                 oldPrice={product.oldPrice}
                 stock={product.stock}
-                image={product.images?.[0] ?? ""}
+                image={images[0] ?? ""}
                 sellerId={product.sellerId}
                 deliveryType={product.deliveryType}
               />

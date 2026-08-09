@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { error, json, isAdmin } from "@/lib/api";
+import { productImages } from "@/lib/product-images";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export async function GET() {
       qty: o.qty,
       createdAt: o.createdAt.toISOString(),
       productTitle: o.product?.title ?? null,
-      productImage: o.product?.images?.[0] ?? null,
+      productImage: productImages(o.product?.images)[0] ?? null,
       buyer: { id: o.buyer.id, name: o.buyer.name, avatarUrl: o.buyer.avatarUrl, isVerified: o.buyer.isVerified },
       seller: { id: o.seller.id, name: o.seller.name, avatarUrl: o.seller.avatarUrl, isVerified: o.seller.isVerified },
       messages,

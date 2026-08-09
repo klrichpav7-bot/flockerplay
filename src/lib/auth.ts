@@ -15,7 +15,7 @@ const providers: Provider[] = [
       const password = credentials?.password as string;
       if (!email || !password) return null;
 
-      const user = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
+      const user = await prisma.user.findFirst({ where: { email: { equals: email } } });
       if (!user) return null;
 
       const valid = await bcrypt.compare(password, user.passwordHash);

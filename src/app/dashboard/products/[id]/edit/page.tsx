@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { ProductForm } from "@/components/dashboard/product-form";
+import { productImages } from "@/lib/product-images";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           stock: product.stock,
           deliveryType: product.deliveryType,
           deliveryInfo: product.deliveryInfo,
-          images: product.images,
+          images: productImages(product.images),
         }}
       />
     </div>

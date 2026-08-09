@@ -52,16 +52,16 @@ export function BannerSlider({ banners }: { banners: BannerItem[] }) {
           <Link
             key={b.id}
             href={b.linkUrl || "/catalog"}
-            className="relative h-44 min-w-full shrink-0 overflow-hidden sm:h-64 md:h-72"
+            className="relative h-44 min-w-full shrink-0 overflow-hidden bg-muted/40 sm:h-56 md:h-72"
           >
             {b.imageUrl ? (
-              <img src={b.imageUrl} alt={b.title} className="h-full w-full object-cover" />
+              <img src={b.imageUrl} alt={b.title} className="h-full w-full object-contain" />
             ) : (
               <div className="grid h-full w-full place-items-center bg-gradient-to-br from-sky-600/40 to-violet-600/40">
                 <Gamepad2 className="h-16 w-16 text-white/70" />
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
             <p className="absolute bottom-4 left-5 font-display text-xl font-bold text-white drop-shadow sm:text-2xl">
               {b.title}
             </p>

@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   }
 
   const taken = await prisma.user.findFirst({
-    where: { name: { equals: name, mode: "insensitive" }, id: { not: session.user.id } },
+    where: { name: { equals: name }, id: { not: session.user.id } },
     select: { id: true },
   });
   if (taken) return error("Такой никнейм уже занят — выберите другой", 409);

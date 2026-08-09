@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { formatDate, formatPrice, initials } from "@/lib/format";
+import { productImages } from "@/lib/product-images";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const st = statusMap[order.status] ?? { label: order.status, className: "" };
   const canReveal = Boolean(order.deliveryInfo) && (order.status === "DELIVERED" || order.status === "COMPLETED");
   const counterpart = isBuyer ? order.seller : order.buyer;
-  const image = order.product?.images?.[0];
+  const image = productImages(order.product?.images)[0];
 
   return (
     <div className="section py-10">

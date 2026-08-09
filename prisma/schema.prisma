@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -81,7 +81,7 @@ model User {
   needsSetup   Boolean  @default(false)
   role         Role     @default(ROLE_USER)
   avatarUrl    String?
-  about        String?
+  about        String? @db.Text
   isSeller     Boolean  @default(false)
   isVerified   Boolean  @default(false)
   isBlocked    Boolean  @default(false)
@@ -151,13 +151,13 @@ model Product {
   categoryId   String
   subcategoryId String?
   title        String
-  description  String
+  description  String @db.Text
   price        Int
   oldPrice     Int?
   stock        Int           @default(0)
-  images       String[]      @default([])
+  images       Json?
   deliveryType String        @default("AUTO")
-  deliveryInfo String        @default("")
+  deliveryInfo String @db.Text
   status       ProductStatus @default(PENDING)
   isFeatured   Boolean       @default(false)
   isOfficial   Boolean       @default(false)
@@ -188,8 +188,8 @@ model Order {
   qty             Int         @default(1)
   sellerAmount    Int         @default(0)
   status          OrderStatus @default(PENDING)
-  buyerNote       String?
-  deliveryInfo    String?
+  buyerNote       String? @db.Text
+  deliveryInfo    String? @db.Text
   deliveredAt     DateTime?
   fundsFrozenAt   DateTime?
   fundsReleaseAt  DateTime?
@@ -230,7 +230,7 @@ model BalanceTransaction {
   userId    String
   type      TxType
   amount    Int
-  reason    String?
+  reason    String? @db.Text
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -259,9 +259,9 @@ model Withdrawal {
   userId     String
   amount     Int
   method     String
-  details    String
+  details    String @db.Text
   status     WithdrawalStatus @default(PENDING)
-  adminNote  String?
+  adminNote  String? @db.Text
   reviewedAt DateTime?
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
@@ -279,7 +279,7 @@ model Review {
   buyerId   String
   sellerId  String
   rating    Int
-  comment   String?
+  comment   String? @db.Text
   createdAt DateTime @default(now())
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -296,10 +296,10 @@ model TopUpRequest {
   userId     String
   amount     Int
   method     String?
-  comment    String?
-  proofUrl   String?
+  comment    String? @db.Text
+  proofUrl   String? @db.Text
   status     TopUpStatus @default(PENDING)
-  adminNote  String?
+  adminNote  String? @db.Text
   reviewedAt DateTime?
   createdAt  DateTime    @default(now())
 
@@ -313,7 +313,7 @@ model Ticket {
   id        String       @id @default(cuid())
   userId    String
   orderId   String?
-  subject   String
+  subject   String @db.Text
   status    TicketStatus @default(OPEN)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
@@ -331,7 +331,7 @@ model Message {
   id        String   @id @default(cuid())
   ticketId  String
   senderId  String
-  body      String
+  body      String @db.Text
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -347,9 +347,9 @@ model Complaint {
   targetId   String
   orderId    String?
   reason     String
-  text       String?
+  text       String? @db.Text
   status     ComplaintStatus @default(PENDING)
-  adminNote  String?
+  adminNote  String? @db.Text
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
 
@@ -364,7 +364,7 @@ model Notification {
   id        String   @id @default(cuid())
   userId    String
   title     String
-  body      String?
+  body      String? @db.Text
   type      String   @default("info")
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -379,8 +379,8 @@ model Banner {
   id         String       @id @default(cuid())
   ownerId    String
   title      String
-  imageUrl   String?
-  linkUrl    String?
+  imageUrl   String? @db.Text
+  linkUrl    String? @db.Text
   placement  String       @default("HOME")
   status     BannerStatus @default(PENDING)
   sortOrder  Int          @default(0)

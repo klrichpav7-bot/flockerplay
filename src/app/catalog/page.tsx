@@ -34,7 +34,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
         status: "APPROVED",
         ...(cat ? { categoryId: cat } : {}),
         ...(sub ? { subcategoryId: sub } : {}),
-        ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }] } : {}),
+        ...(q ? { OR: [{ title: { contains: q } }, { description: { contains: q } }] } : {}),
       },
       orderBy:
         sort === "price-asc"

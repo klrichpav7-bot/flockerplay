@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   if (cat) where.categoryId = cat;
   if (sellerId) where.sellerId = sellerId;
   if (q) {
-    where.OR = [{ title: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }];
+    where.OR = [{ title: { contains: q } }, { description: { contains: q } }];
   }
 
   const orderBy: Record<string, unknown>[] =

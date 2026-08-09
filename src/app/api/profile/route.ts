@@ -17,7 +17,7 @@ export async function PATCH(req: Request) {
     if (name.length < 2) return error("Никнейм должен быть не короче 2 символов", 422);
     if (name.length > 50) return error("Максимум 50 символов", 422);
     const taken = await prisma.user.findFirst({
-      where: { name: { equals: name, mode: "insensitive" }, id: { not: session.user.id } },
+      where: { name: { equals: name }, id: { not: session.user.id } },
       select: { id: true },
     });
     if (taken) return error("Такой никнейм уже занят — выберите другой", 409);
