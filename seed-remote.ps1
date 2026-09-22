@@ -1,5 +1,5 @@
-# Заливка схемы + демо-данных FlockerPlay на удалённую БД (Neon / Render Postgres)
-# Использование:
+# Push schema + seed FlockerPlay demo data to a remote DB (Neon / Render Postgres)
+# Usage:
 #   .\seed-remote.ps1 -DatabaseUrl "postgresql://user:pass@host/db?sslmode=require"
 param(
   [Parameter(Mandatory = $true)]
@@ -9,13 +9,13 @@ param(
 $ErrorActionPreference = "Stop"
 $env:DATABASE_URL = $DatabaseUrl
 
-Write-Host "==> db push (создание таблиц) на удалённую БД..."
+Write-Host "==> prisma db push (create tables)..."
 npx prisma db push
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host "==> seed (демо-данные: админ, покупатель, продавцы, товары)..."
+Write-Host "==> prisma db seed (admin, buyer, sellers, products)..."
 npx prisma db seed
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ""
-Write-Host "Готово! БД заполнена. Строка используется только в этой сессии, .env не тронут."
+Write-Host "DONE. DB is seeded. Your local .env was not touched."
