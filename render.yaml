@@ -1,0 +1,38 @@
+# Render blueprint: FlockerPlay (free tier)
+# 1) Import this repo in Render: New -> Web Service -> GitHub (klrichpav7-bot/flockerplay)
+# 2) Create a free PostgreSQL on Neon and put its connection string into DATABASE_URL
+# 3) Set NEXTAUTH_URL / NEXT_PUBLIC_* to https://flockerplay.ru
+services:
+  - type: web
+    name: flockerplay
+    runtime: node
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: NEXT_PUBLIC_SOCKET_URL
+        sync: false
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+      - key: YOOMONEY_WALLET
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
